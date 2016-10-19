@@ -20,6 +20,12 @@ int CANVAS_WIDTH = 888,
 int PADDLE_WIDTH = 90,
     PADDLE_HEIGHT = 140,
     BALL_DIMENSIONS = 25;
+    
+// Set hit accuracy (in pixels)
+int ACCURACY = 10;
+
+// Define motion parameters
+int acc_x, acc_y, acc_z, gyr_x, gyr_y, gyr_z, pos_y;
 
 void setup() {
   // initialize serial reader to read data from serial port
@@ -58,21 +64,47 @@ void draw_canvas() {
   draw_image(ball, BALL_DEFAULT_POS_X, BALL_DEFAULT_POS_Y, BALL_DIMENSIONS, BALL_DIMENSIONS, true);
 }
 
-void draw_image(PImage i, int x, int y, int w, int h, Boolean isBall) {
-  image(i, x, y, w, h);
+ArrayList<Integer> draw_image(PImage i, int x, int y, int w, int h, Boolean isBall) {
+  ArrayList<Integer> pos_vals = new ArrayList<Integer>();
+  if (y <= 603 && abs(x) <= 888) {
+    image(i, x, y, w, h);
+    
+    // draw hit points
+    color c = color(255, 0, 0);  
+    fill(c);  
+    if (isBall == false) {
+      if (x < 0) {
+        ellipse(x + 5, y - 20, 10, 10); // paddle 1
+        pos_vals.add(x + 5);
+        pos_vals.add(y - 20);
+      }
+      else {
+        ellipse(x - 5, y - 20, 10, 10); // paddle 2
+        pos_vals.add(x - 5);
+        pos_vals.add(y - 20);
+      }
+    }
+    else {
+      c = color(255, 255, 255);
+      fill(c);
+      ellipse(-1, 8, 10, 10); // ball
+      pos_vals.add(-1);
+      pos_vals.add(8);
+    }
+  }
   
-  // draw hit points
-  color c = color(255, 0, 0);  
-  fill(c);  
-  if (isBall == false) {
-    if (x < 0)
-      ellipse(x + 5, y - 20, 10, 10); // paddle 1
-    else
-      ellipse(x - 5, y - 20, 10, 10); // paddle 2
+  return pos_vals;
+}
+
+Boolean isHit(ArrayList<Integer> pos_vals) {
+  Boolean hit = false;
+  
+  if (pos_vals.size() > 0) {
+    if (abs(abs(pos_vals.get(0)) - abs(pos_vals.get(2))) <= ACCURACY)
+      hit = true;
+    else if  (abs(abs(pos_vals.get(1)) - abs(pos_vals.get(3))) <= ACCURACY)
+      hit = true;
   }
-  else {
-    c = color(255, 255, 255);
-    fill(c);
-    ellipse(-1, 8, 10, 10); // ball
-  }
+  
+  return hit;
 }
