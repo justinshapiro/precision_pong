@@ -29,7 +29,8 @@ int acc_x, acc_y, acc_z, gyr_x, gyr_y, gyr_z, pos_y;
 
 void setup() {
   // initialize serial reader to read data from serial port
-  port = new Serial(this, Serial.list()[0], 9600);
+  port = new Serial(this, Serial.list()[2], 9600);
+  port.bufferUntil('*');
   
   // setup canvas parameters
   size(888, 603);
@@ -42,24 +43,45 @@ void setup() {
   paddle1 = loadImage("paddle1.png");
   paddle2 = loadImage("paddle2.png");
   ball    = loadImage("ball.png");
-  draw_canvas();
+  draw_canvas(P1_DEFAULT_POS_Y);
 }
 
-void draw() { // loop
+void draw() {
   if (port.available() > 0) {
-    port.read();
-    // everything goes here
-    // call data parsing methods to get locations
-    // parse serial data so that we can determine a screen position
+    int dist = getData(port.readStringUntil('*'));
+    if (dist > -1)
+      draw_canvas(pix_map(dist));
   }
-  draw_canvas(); // do not remove
+  else {
+    draw_canvas(P1_DEFAULT_POS_Y); // do not remove
+  }
 }
 
-void draw_canvas() {
+int pix_map(int dist) {
+  int max_dist = (CANVAS_HEIGHT - P1_DEFAULT_POS_Y) / 2;
+  return dist - max_dist;
+}
+
+int getData(String data) {
+    if (data != null) {
+      data = data.substring(0, data.length() - 1);
+      int dist = P1_DEFAULT_POS_Y;
+      
+      try {
+        dist = Integer.parseInt(data.trim());
+      } catch (NumberFormatException e) { /* do nothing */ }
+      
+      return dist;
+    } 
+    else 
+      return -1;
+}
+
+void draw_canvas(int dist) {
   imageMode(CENTER);
   background(table);
   translate(width / 2, height / 2);
-  draw_image(paddle1, P1_DEFAULT_POS_X, P1_DEFAULT_POS_Y, PADDLE_WIDTH, PADDLE_HEIGHT, false);
+  draw_image(paddle1, P1_DEFAULT_POS_X, dist, PADDLE_WIDTH, PADDLE_HEIGHT, false);
   draw_image(paddle2, P2_DEFAULT_POS_X, P2_DEFAULT_POS_Y, PADDLE_WIDTH, PADDLE_HEIGHT, false);
   draw_image(ball, BALL_DEFAULT_POS_X, BALL_DEFAULT_POS_Y, BALL_DIMENSIONS, BALL_DIMENSIONS, true);
 }
