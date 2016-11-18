@@ -9,18 +9,14 @@
 #define MPU9150_PWR_MGMT_2         0x6C   // R/W
 
 // Ultrasonic sensor pin modes
-#define trigPin 13
-#define echoPin 12
+#define trigger 13
+#define echo 12
 
 // Accelerometer globals
 int MPU9150_I2C_ADDRESS = 0x68; // try 0x69 if 0x68 doesn't work
 int cmps[3];
 int accl[3];
 int gyro[3];
-int temp;
-
-bool no_jump = false;
-int last_largest_dist = 0;
 
 // Filter globals
 short sampleSize = 0; // Size for array acess
@@ -28,39 +24,40 @@ const short MAXSAMPLE = 1, MAXRANGE = 480, MINRANGE = 100; // Set ranges
 short Samples[MAXSAMPLE]; // Array for sample collection
 
 void setup() {
-  // Initialize the Serial Bus for printing data.
-  Serial.begin (9600);
+  // Initialize the serial bus for printing data
+  Serial.begin(9600);
 
-  // Initialize the 'Wire' class for the I2C-bus.
+  // Initialize accelerometer
   Wire.begin();
-
-  // Clear the 'sleep' bit to start the sensor.
   MPU9150_writeSensor(MPU9150_PWR_MGMT_1, 0);
 
-  // Set pinModes for the Ultrasonic Sensor
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
+  // Set pin modes for the Ultrasonic Sensor
+  pinMode(trigger, OUTPUT);
+  pinMode(echo, INPUT);
 }
 
 void loop() {
-  short duration, distance, average = 0; // Distance vars
+  // Send data to Processing
+  Serial.print(getData());  
 
-  sendUltrasonicData(duration, distance, average);
-  //sendAccelerometerData();
-  
+  // Synchronize with Processing's frame rate
   delay(20);
 }
 
-void sendUltrasonicData(short duration, short distance, short average) {
-  TOP:
-  digitalWrite(trigPin, LOW); 
-  delayMicroseconds(2); 
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
+String getData() {
+  String data_str = "";
+  short duration = 0, distance = 0, average = 0;
   
-  duration = pulseIn(echoPin, HIGH);
+  TOP:
+  digitalWrite(trigger, LOW); 
+  delayMicroseconds(2); // do not remove
+  digitalWrite(trigger, HIGH);
+  delayMicroseconds(10); // do not remove
+  digitalWrite(trigger, LOW);
+  
+  duration = pulseIn(echo, HIGH);
   distance = (5 * duration) / 29.1; // convert duration to ms
+  
   Samples[sampleSize] = distance;
   average = distance;
 
@@ -81,33 +78,28 @@ void sendUltrasonicData(short duration, short distance, short average) {
       average += Samples[inc]; 
     
     average = average / sampleSize; // Get average sample by divisions
-    
-    //Serial.print("&");
-    Serial.print(average - MINRANGE); // Print the average sample  
-    Serial.print("*");
+
+    data_str = String(average - MINRANGE) + "*";
+    //data_str = "&" + String(average - MINRANGE) + "*" + getAccelerometerData();
   }
-  else {
-    //Serial.print("&");
-    Serial.print(average - MINRANGE); // Print raw sample if Size == 0
-    Serial.print("*");
-  }
+  else 
+    data_str = String(average - MINRANGE) + "*";
+    //data_str = "&" + String(average - MINRANGE) + "*" + getAccelerometerData();
     
   if (sampleSize == MAXSAMPLE - 1) 
     sampleSize = 0; // Reset sampleSize
   else 
     ++sampleSize;
+
+    return data_str;
 }
 
-void sendAccelerometerData() {
-  Serial.print("@");
-  Serial.print(MPU9150_readSensor(MPU9150_ACCEL_XOUT_L,MPU9150_ACCEL_XOUT_H));
-  Serial.print("#");
+String getAccelerometerData() {
+  String accel_str = "@" + String(MPU9150_readSensor(MPU9150_ACCEL_XOUT_L,MPU9150_ACCEL_XOUT_H)) + "#";
+  return accel_str;
 }
 
-////////////////////////////////////////////////////////////
-///////// I2C functions to get easier all values ///////////
-////////////////////////////////////////////////////////////
-
+// All functions below are for getting accelerometer data
 int MPU9150_readSensor(int addrL, int addrH){
   Wire.beginTransmission(MPU9150_I2C_ADDRESS);
   Wire.write(addrL);

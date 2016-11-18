@@ -1,33 +1,37 @@
 import processing.serial.*;
-import cc.arduino.*;
 
 // Define serial reader
 Serial port;
 
 // Define image objects
-PImage table, paddle1, paddle2, ball;
+PImage table;
+PImage paddle1;
+PImage paddle2;
+PImage ball;
 
-// Set dimensions
-int CANVAS_WIDTH = 888,
-    CANVAS_HEIGHT = 603,
-    P1_DEFAULT_POS_X = -350,
-    P1_DEFAULT_POS_Y = 30,
-    P2_DEFAULT_POS_X = -P1_DEFAULT_POS_X,
-    P2_DEFAULT_POS_Y = P1_DEFAULT_POS_Y,
-    BALL_DEFAULT_POS_X = 0,
-    BALL_DEFAULT_POS_Y = 8;
+// Set image object width and height
+int PADDLE_WIDTH    = 90;
+int PADDLE_HEIGHT   = 140;
+int BALL_DIMENSIONS = 25;
+
+// Set default dimensions
+int CANVAS_WIDTH       = 888;
+int CANVAS_HEIGHT      = 603;
+int P1_DEFAULT_POS_X   = -350;
+int P1_DEFAULT_POS_Y   = 30;
+int P2_DEFAULT_POS_X   = -P1_DEFAULT_POS_X;
+int P2_DEFAULT_POS_Y   = P1_DEFAULT_POS_Y;
+int BALL_DEFAULT_POS_X = 0;
+int BALL_DEFAULT_POS_Y = 8;
 
 // Save last recorded distance
-int P1_CURRENT_DIST = P1_DEFAULT_POS_Y;
-int P2_CURRENT_DIST = P2_DEFAULT_POS_Y;
+int P1_CURRENT_DIST = 0;
+int P2_CURRENT_DIST = 0;
 
-Boolean comp_up = true, comp_down = false;
+// Variables for computer player motion
+Boolean comp_up = true;
+Boolean comp_down = false;
 
-// Set object width and height
-int PADDLE_WIDTH = 90,
-    PADDLE_HEIGHT = 140,
-    BALL_DIMENSIONS = 25;
-    
 // Set hit accuracy (in pixels)
 int ACCURACY = 10;
 
@@ -36,13 +40,18 @@ int acc_x, acc_y;
 
 void setup() {
   // initialize serial reader to read data from serial port
-  port = new Serial(this, Serial.list()[5], 9600);
-  port.bufferUntil('*');
+  /*printArray(Serial.list());
+  delay(100000);*/
+  port = new Serial(this, Serial.list()[3], 9600);
+  port.bufferUntil('*'); // end of data transmission
   
   // setup canvas parameters
   size(888, 603);
   noStroke();
   smooth();
+  
+  P1_CURRENT_DIST = P1_DEFAULT_POS_Y;
+  P2_CURRENT_DIST = P2_DEFAULT_POS_Y;
  
   // assign image objects an actual image
   table   = loadImage("ping_pong_bg.jpg");
@@ -52,17 +61,8 @@ void setup() {
   draw_canvas(P1_DEFAULT_POS_Y, P2_DEFAULT_POS_Y);
 }
 
+// Used to control the computer's paddle 
 void draw() {
-  if (port.available() > 0) {
-    int dist = getData(port.readStringUntil('*'));
-        if (dist > -1) {
-          println(dist);
-          int new_dist = pix_map(dist);
-          if (abs(new_dist - P1_CURRENT_DIST) > 10)
-            P1_CURRENT_DIST = new_dist;
-        }
-  }
-  
   if (comp_up)
     P2_CURRENT_DIST -= 10;
   else
@@ -72,7 +72,7 @@ void draw() {
     comp_up = true;
     comp_down = false;
   }
-  else if (P2_CURRENT_DIST < -(CANVAS_HEIGHT / 2)) {
+  else if (P2_CURRENT_DIST < (-CANVAS_HEIGHT / 2)) {
     comp_down = true;
     comp_up = false;
   }
@@ -80,14 +80,15 @@ void draw() {
   draw_canvas(P1_CURRENT_DIST, P2_CURRENT_DIST);
 }
 
-int pix_map(int dist) {
-  int max_dist = (CANVAS_HEIGHT - P1_DEFAULT_POS_Y) / 2;
-  int return_dist = 2 * (dist - max_dist) + 286;
-  
-  if (return_dist > 286)
-    return_dist = 286;
-
-  return return_dist;
+// Used to control the user's paddle
+void serialEvent(Serial port) {
+  int dist = getData(port.readString());
+  if (dist > -1) {
+    println(dist);
+    int new_dist = pix_map(dist);
+    if (abs(new_dist - P1_CURRENT_DIST) > 10)
+      P1_CURRENT_DIST = new_dist;
+  }
 }
 
 int getData(String data) {
@@ -106,6 +107,16 @@ int getData(String data) {
     } 
     else 
       return -1;
+}
+
+int pix_map(int dist) {
+  int max_dist = (CANVAS_HEIGHT - P1_DEFAULT_POS_Y) / 2;
+  int return_dist = 2 * (dist - max_dist) + 286;
+  
+  if (return_dist > 286)
+    return_dist = 286;
+
+  return return_dist;
 }
 
 void draw_canvas(int P1_CURRENT_DIST, int P2_CURRENT_DIST) {
