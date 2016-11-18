@@ -1,4 +1,5 @@
 import processing.serial.*;
+import cc.arduino.*;
 
 // Define serial reader
 Serial port;
@@ -16,6 +17,12 @@ int CANVAS_WIDTH = 888,
     BALL_DEFAULT_POS_X = 0,
     BALL_DEFAULT_POS_Y = 8;
 
+// Save last recorded distance
+int P1_CURRENT_DIST = P1_DEFAULT_POS_Y;
+int P2_CURRENT_DIST = P2_DEFAULT_POS_Y;
+
+Boolean comp_up = true, comp_down = false;
+
 // Set object width and height
 int PADDLE_WIDTH = 90,
     PADDLE_HEIGHT = 140,
@@ -25,16 +32,15 @@ int PADDLE_WIDTH = 90,
 int ACCURACY = 10;
 
 // Define motion parameters
-int acc_x, acc_y, acc_z, gyr_x, gyr_y, gyr_z, pos_y;
+int acc_x, acc_y;
 
 void setup() {
   // initialize serial reader to read data from serial port
-  port = new Serial(this, Serial.list()[2], 9600);
+  port = new Serial(this, Serial.list()[5], 9600);
   port.bufferUntil('*');
   
   // setup canvas parameters
   size(888, 603);
-  frameRate(1000);
   noStroke();
   smooth();
  
@@ -43,46 +49,71 @@ void setup() {
   paddle1 = loadImage("paddle1.png");
   paddle2 = loadImage("paddle2.png");
   ball    = loadImage("ball.png");
-  draw_canvas(P1_DEFAULT_POS_Y);
+  draw_canvas(P1_DEFAULT_POS_Y, P2_DEFAULT_POS_Y);
 }
 
 void draw() {
   if (port.available() > 0) {
     int dist = getData(port.readStringUntil('*'));
-    if (dist > -1)
-      draw_canvas(pix_map(dist));
+        if (dist > -1) {
+          println(dist);
+          int new_dist = pix_map(dist);
+          if (abs(new_dist - P1_CURRENT_DIST) > 10)
+            P1_CURRENT_DIST = new_dist;
+        }
   }
-  else {
-    draw_canvas(P1_DEFAULT_POS_Y); // do not remove
+  
+  if (comp_up)
+    P2_CURRENT_DIST -= 10;
+  else
+    P2_CURRENT_DIST += 10;
+  
+  if (P2_CURRENT_DIST > (CANVAS_HEIGHT / 2)) {
+    comp_up = true;
+    comp_down = false;
   }
+  else if (P2_CURRENT_DIST < -(CANVAS_HEIGHT / 2)) {
+    comp_down = true;
+    comp_up = false;
+  }
+  
+  draw_canvas(P1_CURRENT_DIST, P2_CURRENT_DIST);
 }
 
 int pix_map(int dist) {
   int max_dist = (CANVAS_HEIGHT - P1_DEFAULT_POS_Y) / 2;
-  return dist - max_dist;
+  int return_dist = 2 * (dist - max_dist) + 286;
+  
+  if (return_dist > 286)
+    return_dist = 286;
+
+  return return_dist;
 }
 
 int getData(String data) {
     if (data != null) {
       data = data.substring(0, data.length() - 1);
-      int dist = P1_DEFAULT_POS_Y;
+      int dist = 0;
       
       try {
         dist = Integer.parseInt(data.trim());
       } catch (NumberFormatException e) { /* do nothing */ }
       
-      return dist;
+      if (dist > 0)
+        return dist;
+      else 
+        return -1;
     } 
     else 
       return -1;
 }
 
-void draw_canvas(int dist) {
+void draw_canvas(int P1_CURRENT_DIST, int P2_CURRENT_DIST) {
   imageMode(CENTER);
   background(table);
   translate(width / 2, height / 2);
-  draw_image(paddle1, P1_DEFAULT_POS_X, dist, PADDLE_WIDTH, PADDLE_HEIGHT, false);
-  draw_image(paddle2, P2_DEFAULT_POS_X, P2_DEFAULT_POS_Y, PADDLE_WIDTH, PADDLE_HEIGHT, false);
+  draw_image(paddle1, P1_DEFAULT_POS_X, P1_CURRENT_DIST, PADDLE_WIDTH, PADDLE_HEIGHT, false);
+  draw_image(paddle2, P2_DEFAULT_POS_X, P2_CURRENT_DIST, PADDLE_WIDTH, PADDLE_HEIGHT, false);
   draw_image(ball, BALL_DEFAULT_POS_X, BALL_DEFAULT_POS_Y, BALL_DIMENSIONS, BALL_DIMENSIONS, true);
 }
 
