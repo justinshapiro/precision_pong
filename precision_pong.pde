@@ -42,8 +42,8 @@ void setup() {
   // initialize serial reader to read data from serial port
   /*printArray(Serial.list());
   delay(100000);*/
-  port = new Serial(this, Serial.list()[3], 9600);
-  port.bufferUntil('*'); // end of data transmission
+  //port = new Serial(this, Serial.list()[3], 9600);
+  //port.bufferUntil('*'); // end of data transmission
   
   // setup canvas parameters
   size(888, 603);
