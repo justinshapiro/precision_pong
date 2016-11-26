@@ -43,15 +43,16 @@ public class Ball {
   }
   
   public void setSlope() {
-     float new_slope_rise = -1;
-     float new_slope_run = 1;
+     Random r = new Random();
+     float new_slope_rise = r.nextInt((1 - (-1)) + 1) + (-1); // -1 - 1
+     float new_slope_run = r.nextInt((10 - 4) + 1) + 4;  // 4 - 10
      
      if (direction > 0) {
        new_slope_run = -new_slope_run;
        direction = -direction;
      }
      
-     slope.set(0, new_slope_rise);
-     slope.set(1, new_slope_run);
+     slope.set(0, new_slope_run);
+     slope.set(1, new_slope_rise);
   }
 }

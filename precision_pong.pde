@@ -24,9 +24,9 @@ int recieving_paddle = 2;
 
 void setup() {
   // initialize serial reader to read data from serial port
-  //printArray(Serial.list()); 
- // port = new Serial(this, Serial.list()[3], 9600);
- // port.bufferUntil('*'); // end of data transmission
+    printArray(Serial.list()); 
+    port = new Serial(this, Serial.list()[3], 9600);
+    port.bufferUntil('*'); // end of data transmission
   
   // Setup canvas parameters
   size(888, 603);
@@ -47,7 +47,6 @@ void setup() {
 // Used to control the computer's paddle and draw the GUI
 void draw() {
   if (isHit()) {
-    println("Hit is true");
     b.setSlope();
     
     if (recieving_paddle == 1) {
@@ -144,8 +143,7 @@ Boolean isHit() {
     paddle_x = p2.curr_x;
     paddle_y = p2.curr_y;
   }
-  
-  println(dist_between(paddle_x, paddle_y));
+ 
   if (dist_between(paddle_x, paddle_y) <= ACCURACY) {
     hit = true;
   }
@@ -155,5 +153,4 @@ Boolean isHit() {
 
 float dist_between(int p_x, int p_y) {
   return sqrt(pow(b.curr_x - p_x, 2) + pow(b.curr_y - p_y, 2));
-  
 }
