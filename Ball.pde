@@ -2,15 +2,21 @@ import java.util.Random;
 
 public class Ball {
   public int direction;
-  public ArrayList<Integer> slope;
+  public ArrayList<Float> slope;
   public int curr_x;
   public int curr_y;
+  public int dim;
+  public PImage img;
   
   public Ball() {
-    direction = 0;
-    slope = new ArrayList<Integer>(2);
-    curr_x = BALL_DEFAULT_POS_X;
-    curr_y = BALL_DEFAULT_POS_Y;
+    direction = 1;
+    slope = new ArrayList<Float>();
+    slope.add(0, 0.0);
+    slope.add(1, 0.0);
+    curr_x = 345;
+    curr_y = 8;
+    dim = 25;
+    img = loadImage("ball.png");
   }
   
   public void move() {
@@ -23,7 +29,7 @@ public class Ball {
     int hit_pos = curr_y;
     int time_till_pos = 0;
     
-    while (temp_x < P2_DEFAULT_POS_X) {
+    while (temp_x < 350) {
       temp_x += slope.get(0);
       hit_pos += slope.get(1);
       time_till_pos++;
@@ -37,8 +43,8 @@ public class Ball {
   }
   
   public void setSlope() {
-     int new_slope_rise = 1;
-     int new_slope_run = 2;
+     float new_slope_rise = -1;
+     float new_slope_run = 1;
      
      if (direction > 0) {
        new_slope_run = -new_slope_run;
