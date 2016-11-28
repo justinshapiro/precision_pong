@@ -22,6 +22,8 @@ public class Ball {
   public void move() {
     curr_x += slope.get(0);
     curr_y += slope.get(1);
+    println("Run: " + Float.toString(slope.get(0)));
+    println("Rise: " + Float.toString(slope.get(1)));
   }
   
   public int getHitPos() {
@@ -49,7 +51,9 @@ public class Ball {
      }
      
      if (abs(p1.curr_y) > 150 || abs(p2.curr_y) > 150) {
-       new_slope_rise = -new_slope_rise;
+       if (new_slope_rise > 0) {
+         new_slope_rise = -new_slope_rise;
+       }
      }
      
      slope.set(0, new_slope_run);

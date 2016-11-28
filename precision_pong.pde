@@ -21,22 +21,38 @@ int ACCURACY = 40;
 
 // Gameplay variables
 int recieving_paddle = 2;
+int p1_score;
+int p2_score;
+int level;
+Boolean p1_win;
+Boolean p2_win;
+Boolean reset;
+Boolean game_over;
 
 void setup() {
   // initialize serial reader to read data from serial port
-    printArray(Serial.list()); 
-    //port = new Serial(this, Serial.list()[3], 9600);
-   // port.bufferUntil('*'); // end of data transmission
+  printArray(Serial.list()); 
+  port = new Serial(this, Serial.list()[3], 9600);
+  port.bufferUntil('*'); // end of data transmission
   
   // Setup canvas parameters
   size(888, 603);
   noStroke();
   smooth();
+  textSize(25);
   
   // Initialize game objects
   b = new Ball();
   p1 = new Paddle("1");
   p2 = new Paddle("2");
+  
+  level = 0;
+  p1_score = 0;
+  p2_score = 0;
+  p1_win = false;
+  p2_win = false;
+  reset = false;
+  game_over = false;
  
   // assign image objects an actual image
   table = loadImage("ping_pong_bg.jpg");
@@ -46,22 +62,59 @@ void setup() {
 
 // Used to control the computer's paddle and draw the GUI
 void draw() {
-  if (isHit()) {
-    b.setSlope();
+  if (!game_over) {
+    if (isHit()) {
+      b.setSlope();
+      
+      if (recieving_paddle == 1) {
+        recieving_paddle = 2;
+        p2.setHitPos(b.getHitPos());
+      } else if (recieving_paddle == 2) {
+        recieving_paddle = 1;
+      }
+    }
     
     if (recieving_paddle == 1) {
-      recieving_paddle = 2;
-      p2.setHitPos(b.getHitPos());
-    } else if (recieving_paddle == 2) {
-      recieving_paddle = 1;
+      if (b.curr_x < p1.curr_x - 100) {
+        p2_score++;
+        p2_win = true;
+        reset();
+      }
+    }
+    else if (recieving_paddle == 2) {
+      if (b.curr_x > p2.curr_x + 100) {
+        p1_score++;
+        p1_win = true;
+        reset();
+      } else {
+        p2.move();
+      }
     }
   }
   
-  if (recieving_paddle == 2) {
-    p2.move();
-  }
-  b.move();
   draw_canvas();
+  
+  if (p1_score == 3 || p2_score == 3) {
+    game_over = true;
+    reset();
+  } else {
+    b.move();
+  }
+}
+
+void reset() {
+  if (!game_over) {
+    b.curr_x = 345;
+  } else {
+    b.curr_x = 700;
+  }
+  
+  b.curr_y = 8;
+  p1.curr_x = -350;
+  p1.curr_y = 30;
+  p2.curr_x = 350;
+  p2.curr_y = 30;
+  reset = true;
 }
 
 // Used to control the user's paddle
@@ -112,10 +165,57 @@ void draw_canvas() {
   draw_image(p1.img, p1.curr_x, p1.curr_y, p1.p_width, p1.p_height, false);
   draw_image(p2.img, p2.curr_x, p2.curr_y, p2.p_width, p2.p_height, false);
   draw_image(b.img, b.curr_x, b.curr_y, b.dim, b.dim, true);
+  
+  String p1_str = "You: " + Integer.toString(p1_score);
+  String p2_str = "Computer: " + Integer.toString(p2_score);
+  String level_str = "Level " + Integer.toString(level);
+  
+  fill(255, 255, 255);
+  text(p1_str, -410, -275);
+  text(p2_str, 260, -275);
+  fill(0, 0, 205);
+  textSize(40);
+  text(level_str, -75, -215);
+  textSize(25);
+  
+  if (p1_win) {
+    fill(0, 255, 0);
+    textSize(60);
+    text("You Scored!", -175, 0);
+    textSize(25);
+    delay(1000);
+    p1_win = false;
+  } else if (p2_win) {
+    fill(255, 0, 0);
+    textSize(60);
+    text("Computer Scored!", -250, 0);
+    textSize(25);
+    delay(1000);
+    p2_win = false;
+  } else if (reset) {
+    delay(2000);
+    reset = false;
+  }
+  
+  if (game_over) {
+    if (p1_score == 3) {
+      fill(0, 255, 0);
+      textSize(60);
+      text("You Win!", -150, 0);
+      textSize(25);
+      noLoop();
+    } else if (p2_score == 3) {
+      fill(255, 0, 0);
+      textSize(60);
+      text("You Loose!", -175, 0);
+      textSize(25);
+      noLoop();
+    }
+  }
 }
 
 void draw_image(PImage i, int x, int y, int w, int h, Boolean isBall) {
-  if (y <= 603 && abs(x) <= 888) {
+  if (y <= CANVAS_HEIGHT && abs(x) <= CANVAS_WIDTH) {
     image(i, x, y, w, h);
     
     // draw hit points
@@ -124,12 +224,10 @@ void draw_image(PImage i, int x, int y, int w, int h, Boolean isBall) {
     if (isBall == false) {
       if (x < 0) {
         ellipse(x + 5, y - 20, 10, 10); // paddle 1
-      }
-      else {
+      } else {
         ellipse(x - 5, y - 20, 10, 10); // paddle 2
       }
-    }
-    else {
+    } else {
       c = color(255, 255, 255);
       fill(c);
       ellipse(-1, 8, 10, 10); // ball
