@@ -8,8 +8,8 @@ Serial port;
 PImage table;
 
 // Set default dimensions
-int CANVAS_WIDTH       = 888;
-int CANVAS_HEIGHT      = 603;
+int CANVAS_WIDTH = 888;
+int CANVAS_HEIGHT = 603;
 
 // Define game objects
 Ball b;
@@ -17,7 +17,7 @@ Paddle p1;
 Paddle p2;
 
 // Set hit accuracy (in pixels)
-int ACCURACY = 30;
+int ACCURACY = 40;
 
 // Gameplay variables
 int recieving_paddle = 2;
@@ -51,6 +51,7 @@ void draw() {
     
     if (recieving_paddle == 1) {
       recieving_paddle = 2;
+      p2.setHitPos(b.getHitPos());
     } else if (recieving_paddle == 2) {
       recieving_paddle = 1;
     }
@@ -62,13 +63,15 @@ void draw() {
 
 // Used to control the user's paddle
 void serialEvent(Serial port) {
-  int dist = getData(port.readString());
-  if (dist > -1) {
-    println(dist);
-    int new_dist = pix_map(dist);
-    if (abs(new_dist - p1.curr_y) > 10)
-      p1.curr_y = new_dist;
-  }
+  try {
+    int dist = getData(port.readString());
+    if (dist > -1) {
+      println(dist);
+      int new_dist = pix_map(dist);
+      if (abs(new_dist - p1.curr_y) > 10)
+        p1.curr_y = new_dist;
+    }
+  } catch (RuntimeException e) { /* do nothing */ }
 }
 
 int getData(String data) {

@@ -1,6 +1,4 @@
 public class Paddle {
-  int move_rate;
-  Boolean moveToHit;
   int curr_x;
   int curr_y;
   int p_width;
@@ -8,8 +6,6 @@ public class Paddle {
   PImage img;
   
   Paddle(String init) {
-    move_rate = 0;
-    moveToHit = false;
     p_width = 90;
     p_height = 140;
     
@@ -24,14 +20,7 @@ public class Paddle {
     }
   }
   
-  public void setMoveRate(ArrayList<Integer> pos_info) {
-    int hit_location = pos_info.get(2);
-    int time_till = pos_info.get(1);
-    
-    move_rate = (abs(curr_y) + abs(hit_location)) / time_till;
-    
-    if (hit_location - curr_y > 0) {
-      move_rate = -move_rate;
-    }
+  public void setHitPos(int hit_pos) {
+    curr_y = hit_pos;
   }
 }

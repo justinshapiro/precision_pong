@@ -24,22 +24,16 @@ public class Ball {
     curr_y += slope.get(1);
   }
   
-  public ArrayList<Integer> getHitPos() {
+  public int getHitPos() {
     int temp_x = curr_x;
     int hit_pos = curr_y;
-    int time_till_pos = 0;
     
-    while (temp_x < 350) {
+    while (temp_x <= 350) {
       temp_x += slope.get(0);
       hit_pos += slope.get(1);
-      time_till_pos++;
     }
     
-    ArrayList<Integer> pos = new ArrayList<Integer>();
-    pos.add(hit_pos);
-    pos.add(time_till_pos);
-    
-    return pos;
+    return hit_pos;
   }
   
   public void setSlope() {
@@ -49,6 +43,8 @@ public class Ball {
      
      if (direction > 0) {
        new_slope_run = -new_slope_run;
+       direction = -direction;
+     } else {
        direction = -direction;
      }
      
