@@ -1,11 +1,12 @@
 public class Paddle {
-  int curr_x;
-  int curr_y;
-  int p_width;
-  int p_height;
-  PImage img;
+  public int curr_x;
+  public int curr_y;
+  private int goto_y;
+  public int p_width;
+  public int p_height;
+  public PImage img;
   
-  Paddle(String init) {
+  public Paddle(String init) {
     p_width = 90;
     p_height = 140;
     
@@ -21,6 +22,16 @@ public class Paddle {
   }
   
   public void setHitPos(int hit_pos) {
-    curr_y = hit_pos;
+    goto_y = hit_pos;
+  }
+  
+  public void move() {
+    if (curr_y != goto_y) {
+      if (goto_y < curr_y) {
+        curr_y--;
+      } else {
+        curr_y++;
+      }
+    }
   }
 }

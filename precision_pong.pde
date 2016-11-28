@@ -25,8 +25,8 @@ int recieving_paddle = 2;
 void setup() {
   // initialize serial reader to read data from serial port
     printArray(Serial.list()); 
-    port = new Serial(this, Serial.list()[3], 9600);
-    port.bufferUntil('*'); // end of data transmission
+    //port = new Serial(this, Serial.list()[3], 9600);
+   // port.bufferUntil('*'); // end of data transmission
   
   // Setup canvas parameters
   size(888, 603);
@@ -57,6 +57,9 @@ void draw() {
     }
   }
   
+  if (recieving_paddle == 2) {
+    p2.move();
+  }
   b.move();
   draw_canvas();
 }

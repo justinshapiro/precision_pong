@@ -48,6 +48,10 @@ public class Ball {
        direction = -direction;
      }
      
+     if (abs(p1.curr_y) > 150 || abs(p2.curr_y) > 150) {
+       new_slope_rise = -new_slope_rise;
+     }
+     
      slope.set(0, new_slope_run);
      slope.set(1, new_slope_rise);
   }
