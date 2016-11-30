@@ -28,7 +28,7 @@ int recieving_paddle = 2;
 int p1_score;
 int p2_score;
 int winning_score = 3;
-int level;
+int level = 0;
 int num_levels = 4;
 int center = 153;
 Boolean p1_win;
@@ -132,7 +132,7 @@ void draw() {
   // Stop game if there is a winning score, otherwise move ball
   if (p1_score == winning_score || p2_score == winning_score) {
     if (num_levels >= level) {
-      level += 2;
+      level++;
       p1_score = 0;
       p2_score = 0;
     } else {
@@ -213,7 +213,9 @@ int getData(String data) {
 
 int pix_map(int dist) {
   int max_dist = (CANVAS_HEIGHT - 30) / 2;
-  int return_dist = (level + 2) * dist - (max_dist + (center * level));
+  int return_dist = 2 * dist - max_dist; 
+  // Formula for Level conversion: -> 
+  //   User's Paddle Position = (level + 2)(dist) - (max_dist - some_increasing_factor)
   
   if (return_dist > max_dist)
     return_dist = max_dist;

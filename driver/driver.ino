@@ -60,7 +60,7 @@ String getData() {
   digitalWrite(trigger, LOW);
   
   duration = pulseIn(echo, HIGH);
-  distance = (5 * duration) / 29.1; // convert duration to ms
+  distance = (5 * duration) / 29.1; // convert duration to mm
   
   Samples[sampleSize] = distance;
   average = distance;
