@@ -78,25 +78,22 @@ String getData() {
       average += Samples[inc]; 
     
     average = average / sampleSize; // Get average sample by divisions
-
-    data_str = String(average - MINRANGE) + "*";
-    //data_str = "&" + String(average - MINRANGE) + "*" + getAccelerometerData();
+    
+    data_str = String(average - MINRANGE) + "*" + getAccelerometerData() + "#";
   }
   else 
-    data_str = String(average - MINRANGE) + "*";
-    //data_str = "&" + String(average - MINRANGE) + "*" + getAccelerometerData();
+    data_str = String(average - MINRANGE) + "*" + getAccelerometerData() + "#";
     
   if (sampleSize == MAXSAMPLE - 1) 
     sampleSize = 0; // Reset sampleSize
   else 
     ++sampleSize;
 
-    return data_str;
+  return data_str;
 }
 
 String getAccelerometerData() {
-  String accel_str = "@" + String(MPU9150_readSensor(MPU9150_ACCEL_XOUT_L,MPU9150_ACCEL_XOUT_H)) + "#";
-  return accel_str;
+  return String(MPU9150_readSensor(MPU9150_ACCEL_XOUT_L,MPU9150_ACCEL_XOUT_H));
 }
 
 // All functions below are for getting accelerometer data

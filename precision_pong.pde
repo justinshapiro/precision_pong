@@ -16,8 +16,10 @@ Ball b;
 Paddle p1;
 Paddle p2;
 
-// Set hit accuracy (in pixels)
+// Define hit variables
 int ACCURACY = 40;
+int ACCEL_HIT = 8000;
+Boolean hit;
 
 // Gameplay variables
 int recieving_paddle = 2;
@@ -33,7 +35,7 @@ void setup() {
   // initialize serial reader to read data from serial port
   printArray(Serial.list()); 
   port = new Serial(this, Serial.list()[3], 9600);
-  port.bufferUntil('*'); // end of data transmission
+  port.bufferUntil('#'); // end of data transmission
   
   // Setup canvas parameters
   size(888, 603);
@@ -45,6 +47,7 @@ void setup() {
   b = new Ball();
   p1 = new Paddle("1");
   p2 = new Paddle("2");
+  hit = false;
   
   level = 0;
   p1_score = 0;
@@ -64,6 +67,7 @@ void setup() {
 void draw() {
   if (!game_over) {
     if (isHit()) {
+      hit = true;
       b.setSlope();
       
       if (recieving_paddle == 1) {
@@ -123,6 +127,7 @@ void serialEvent(Serial port) {
     int dist = getData(port.readString());
     if (dist > -1) {
       println(dist);
+      println("Accel:" + Integer.toString(p1.curr_accel));
       int new_dist = pix_map(dist);
       if (abs(new_dist - p1.curr_y) > 10)
         p1.curr_y = new_dist;
@@ -132,11 +137,16 @@ void serialEvent(Serial port) {
 
 int getData(String data) {
     if (data != null) {
-      data = data.substring(0, data.length() - 1);
+      String dist_str, accel_str;
       int dist = 0;
+      //data = data.substring(0, data.length() - 1); // removes bufferUntil character
+      int split_idx = data.indexOf('*');
+      dist_str = data.substring(0, split_idx);
+      accel_str = data.substring(split_idx + 1, data.length() - 1);
       
       try {
-        dist = Integer.parseInt(data.trim());
+        dist = Integer.parseInt(dist_str.trim());
+        p1.curr_accel = Integer.parseInt(accel_str.trim());
       } catch (NumberFormatException e) { /* do nothing */ }
       
       if (dist > 0)
@@ -249,7 +259,11 @@ Boolean isHit() {
   }
  
   if (dist_between(paddle_x, paddle_y) <= ACCURACY) {
-    hit = true;
+    if (recieving_paddle == 1 && abs(p1.curr_accel) > ACCEL_HIT) {
+      hit = true;
+    } else if (recieving_paddle == 2) {
+      hit = true;
+    }
   }
   
   return hit;
