@@ -22,8 +22,6 @@ public class Ball {
   public void move() {
     curr_x += slope.get(0);
     curr_y += slope.get(1);
-    println("Run: " + Float.toString(slope.get(0)));
-    println("Rise: " + Float.toString(slope.get(1)));
   }
   
   public int getHitPos() {

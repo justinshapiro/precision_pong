@@ -1,7 +1,8 @@
 public class Paddle {
   public int curr_x;
   public int curr_y;
-  public int curr_accel;
+  public int curr_accel_x;
+  public int curr_accel_y;
   private int goto_y;
   public int p_width;
   public int p_height;
@@ -10,7 +11,8 @@ public class Paddle {
   public Paddle(String init) {
     p_width = 90;
     p_height = 140;
-    curr_accel = 0;
+    curr_accel_x = 0;
+    curr_accel_y = 0;
     
     if (init.equals("1")) {
       curr_x = -350;

@@ -3,8 +3,12 @@
 // Accelerometer addresses
 #define MPU9150_ACCEL_XOUT_H       0x43   // R  0x3B is default and wrong 
 #define MPU9150_ACCEL_XOUT_L       0x44   // R  0x3C is default and wrong
+#define MPU9150_ACCEL_YOUT_H       0x45   // R  0x3d is default and wrong
+#define MPU9150_ACCEL_YOUT_L       0x46   // R  0x3E is default and wrong
 #define MPU9150_GYRO_XOUT_H        0x3B   // R  0x43 is default and wrong
 #define MPU9150_GYRO_XOUT_L        0x3C   // R  0x44 is default and wrong
+#define MPU9150_GYRO_YOUT_H        0x3D   // R  0x45 is default and wrong
+#define MPU9150_GYRO_YOUT_L        0x3E   // R  0x46 is default and wrong
 #define MPU9150_PWR_MGMT_1         0x6B   // R/W
 #define MPU9150_PWR_MGMT_2         0x6C   // R/W
 
@@ -93,7 +97,9 @@ String getData() {
 }
 
 String getAccelerometerData() {
-  return String(MPU9150_readSensor(MPU9150_ACCEL_XOUT_L,MPU9150_ACCEL_XOUT_H));
+  String accel_data = String(MPU9150_readSensor(MPU9150_ACCEL_XOUT_L,MPU9150_ACCEL_XOUT_H)) + "&" +
+                      String(MPU9150_readSensor(MPU9150_ACCEL_YOUT_L,MPU9150_ACCEL_YOUT_H));
+  return accel_data;
 }
 
 // All functions below are for getting accelerometer data

@@ -16,20 +16,38 @@ Ball b;
 Paddle p1;
 Paddle p2;
 
-// Define hit variables
+// Define hit and accuracy variables
 int ACCURACY = 40;
-int ACCEL_HIT = 8000;
+int SMOOTH_FACTOR = 10;
+int ACCEL_X_HIT = 8000;
+int ACCEL_Y_HIT = 20000;
 Boolean hit;
 
 // Gameplay variables
 int recieving_paddle = 2;
 int p1_score;
 int p2_score;
+int winning_score = 3;
 int level;
+int num_levels = 4;
+int center = 153;
 Boolean p1_win;
 Boolean p2_win;
 Boolean reset;
+Boolean game_start;
 Boolean game_over;
+Boolean started;
+String start_str = "Swing UP or DOWN to Start!";
+String started_str = "Good Luck!";
+String score_str= "You Scored!";
+String loss_str = "Computer Scored!";
+String win_str = "You WIN!";
+String loose_str = "You LOOSE!";
+
+// Used for calculation of sample rate
+long last_time = 0;
+int samples = 0;
+Boolean sample_calculated = false;
 
 void setup() {
   // initialize serial reader to read data from serial port
@@ -55,6 +73,8 @@ void setup() {
   p1_win = false;
   p2_win = false;
   reset = false;
+  game_start = false;
+  started = false;
   game_over = false;
  
   // assign image objects an actual image
@@ -64,8 +84,13 @@ void setup() {
 }
 
 // Used to control the computer's paddle and draw the GUI
-void draw() {
-  if (!game_over) {
+void draw() {   
+  if (game_start && !game_over) {
+    if (started) {
+      delay(2000);
+      started = false;
+    }
+    
     if (isHit()) {
       hit = true;
       b.setSlope();
@@ -84,22 +109,35 @@ void draw() {
         p2_win = true;
         reset();
       }
+    } else if (recieving_paddle == 2) {
+        if (b.curr_x > p2.curr_x + 100) {
+          p1_score++;
+          p1_win = true;
+          reset();
+        } else {
+            p2.move();
+        }
     }
-    else if (recieving_paddle == 2) {
-      if (b.curr_x > p2.curr_x + 100) {
-        p1_score++;
-        p1_win = true;
-        reset();
-      } else {
-        p2.move();
-      }
+
+  } else if (!game_start) {
+    if (abs(p1.curr_accel_y) > ACCEL_Y_HIT) {
+      started = true;
+      p1.curr_accel_y = 0;
     }
   }
   
+  // Update the gameboard
   draw_canvas();
   
-  if (p1_score == 3 || p2_score == 3) {
-    game_over = true;
+  // Stop game if there is a winning score, otherwise move ball
+  if (p1_score == winning_score || p2_score == winning_score) {
+    if (num_levels >= level) {
+      level += 2;
+      p1_score = 0;
+      p2_score = 0;
+    } else {
+      game_over = true;
+    }
     reset();
   } else {
     b.move();
@@ -126,10 +164,17 @@ void serialEvent(Serial port) {
   try {
     int dist = getData(port.readString());
     if (dist > -1) {
-      println(dist);
-      println("Accel:" + Integer.toString(p1.curr_accel));
+      if (!sample_calculated && game_start) {
+        samples++;
+        if (System.nanoTime() - last_time >= 1000000000) {
+          println("Sample Rate: " + Integer.toString(samples) + " samples per second");
+          sample_calculated = true;
+        } else {
+          last_time = System.nanoTime();
+        }
+      }
       int new_dist = pix_map(dist);
-      if (abs(new_dist - p1.curr_y) > 10)
+      if (abs(new_dist - p1.curr_y) > SMOOTH_FACTOR + level)
         p1.curr_y = new_dist;
     }
   } catch (RuntimeException e) { /* do nothing */ }
@@ -137,16 +182,24 @@ void serialEvent(Serial port) {
 
 int getData(String data) {
     if (data != null) {
-      String dist_str, accel_str;
+      String dist_str, accel_x_str, accel_y_str = "";
       int dist = 0;
-      //data = data.substring(0, data.length() - 1); // removes bufferUntil character
-      int split_idx = data.indexOf('*');
-      dist_str = data.substring(0, split_idx);
-      accel_str = data.substring(split_idx + 1, data.length() - 1);
+      int sensor_split_idx = data.indexOf('*');
+      int accel_split_idx = data.indexOf('&');
+      dist_str = data.substring(0, sensor_split_idx);
+      accel_x_str = data.substring(sensor_split_idx + 1, accel_split_idx);
+      
+      if (!game_start) {
+        accel_y_str = data.substring(accel_split_idx + 1, data.length() - 1);
+      }
       
       try {
         dist = Integer.parseInt(dist_str.trim());
-        p1.curr_accel = Integer.parseInt(accel_str.trim());
+        p1.curr_accel_x = Integer.parseInt(accel_x_str.trim());
+        
+        if (!game_start) {
+          p1.curr_accel_y = Integer.parseInt(accel_y_str.trim());
+        }
       } catch (NumberFormatException e) { /* do nothing */ }
       
       if (dist > 0)
@@ -160,10 +213,13 @@ int getData(String data) {
 
 int pix_map(int dist) {
   int max_dist = (CANVAS_HEIGHT - 30) / 2;
-  int return_dist = 2 * (dist - max_dist) + 286;
+  int return_dist = (level + 2) * dist - (max_dist + (center * level));
   
-  if (return_dist > 286)
-    return_dist = 286;
+  if (return_dist > max_dist)
+    return_dist = max_dist;
+  else if (return_dist < -max_dist) {
+    return_dist = -max_dist;
+  }
 
   return return_dist;
 }
@@ -178,46 +234,65 @@ void draw_canvas() {
   
   String p1_str = "You: " + Integer.toString(p1_score);
   String p2_str = "Computer: " + Integer.toString(p2_score);
-  String level_str = "Level " + Integer.toString(level);
+  String level_str = "Level " + Integer.toString(level % 2);
   
   fill(255, 255, 255);
   text(p1_str, -410, -275);
   text(p2_str, 260, -275);
-  fill(0, 0, 205);
-  textSize(40);
-  text(level_str, -75, -215);
-  textSize(25);
+  
+  if (game_start) {
+    textSize(40);
+    fill(0, 0, 205);
+    text(level_str, -75, -215);
+    textSize(25);
+  } else {
+    if (!started) {
+      textSize(60);
+      fill(255, 255, 255);
+      text(start_str, -400, 30);
+      textSize(25);
+    }
+  }
+  
+  if (started) {
+    fill(255, 255, 255);
+    textSize(80);
+    if (!game_start) {
+      text(started_str, -200, 30);
+      game_start = true;
+    }
+  }
   
   if (p1_win) {
     fill(0, 255, 0);
     textSize(60);
-    text("You Scored!", -175, 0);
+    text(score_str, -175, 0);
     textSize(25);
     delay(1000);
     p1_win = false;
   } else if (p2_win) {
-    fill(255, 0, 0);
-    textSize(60);
-    text("Computer Scored!", -250, 0);
-    textSize(25);
-    delay(1000);
-    p2_win = false;
+      fill(255, 0, 0);
+      textSize(60);
+      text(loss_str, -250, 0);
+      textSize(25);
+      delay(1000);
+      p2_win = false;
   } else if (reset) {
-    delay(2000);
-    reset = false;
+      delay(2000);
+      reset = false;
   }
   
   if (game_over) {
     if (p1_score == 3) {
       fill(0, 255, 0);
       textSize(60);
-      text("You Win!", -150, 0);
+      text(win_str, -150, 0);
       textSize(25);
       noLoop();
     } else if (p2_score == 3) {
       fill(255, 0, 0);
       textSize(60);
-      text("You Loose!", -175, 0);
+      text(loose_str, -175, 0);
       textSize(25);
       noLoop();
     }
@@ -259,7 +334,7 @@ Boolean isHit() {
   }
  
   if (dist_between(paddle_x, paddle_y) <= ACCURACY) {
-    if (recieving_paddle == 1 && abs(p1.curr_accel) > ACCEL_HIT) {
+    if (recieving_paddle == 1 && abs(p1.curr_accel_x) > ACCEL_X_HIT) {
       hit = true;
     } else if (recieving_paddle == 2) {
       hit = true;
