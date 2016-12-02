@@ -1,5 +1,3 @@
-import java.util.Random;
-
 public class Ball {
   public int direction;
   public ArrayList<Float> slope;

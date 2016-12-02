@@ -7,6 +7,7 @@ public class Paddle {
   public int p_width;
   public int p_height;
   public PImage img;
+  public SoundFile hit_sound;
   
   public Paddle(String init) {
     p_width = 90;
